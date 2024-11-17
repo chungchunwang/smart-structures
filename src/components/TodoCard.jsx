@@ -20,6 +20,7 @@ function TodoCard({
 }) {
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
+  const [isDraggingHandle, setIsDraggingHandle] = useState(false);
   const isMobile = useIsMobile();
   
   const x = useMotionValue(0);
@@ -58,19 +59,47 @@ function TodoCard({
   const formattedTimestamp = timestamp ? new Date(timestamp).toLocaleString() : null;
 
   const handleDragEnd = () => {
-    const xValue = x.get();
-    if (xValue <= -75 && onComplete) {
-      onComplete(todo.id);
-    } else if (xValue >= 75 && onDelete) {
-      onDelete(todo.id);
-    } else {
-      x.set(0);
+    if (!isDraggingHandle) {
+      const xValue = x.get();
+      if (xValue <= -75 && onComplete) {
+        onComplete(todo.id);
+      } else if (xValue >= 75 && onDelete) {
+        onDelete(todo.id);
+      }
     }
+    x.set(0);
   };
 
   return (
     <>
-      <div style={{ position: 'relative', marginBottom: '1rem' }}>
+      <motion.div
+        style={{
+          x,
+          background,
+          opacity,
+          width: '100%',
+          padding: isMobile ? '1rem 0.75rem' : '1rem',
+          borderRadius: '8px',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+          cursor: isDragging ? 'grabbing' : 'grab',
+          touchAction: 'none',
+          backgroundColor: isCompleted ? '#f0fdf4' : isRemoved ? '#fef2f2' : '#fff',
+          userSelect: 'none',
+          WebkitUserSelect: 'none',
+          MozUserSelect: 'none',
+          msUserSelect: 'none',
+          position: 'relative',
+          marginBottom: '1rem',
+        }}
+        whileHover={{ scale: 1.02 }}
+        onContextMenu={handleContextMenu}
+        onClick={onSelect}
+        drag={!isCompleted && !isRemoved && !isDraggingHandle ? "x" : undefined}
+        dragConstraints={{ left: -150, right: 150 }}
+        dragElastic={0.5}
+        onDragEnd={handleDragEnd}
+        dragMomentum={false}
+      >
         <motion.div
           style={{
             position: 'absolute',
@@ -80,6 +109,7 @@ function TodoCard({
             scale: completeScale,
             color: '#4ADE80',
             zIndex: 0,
+            pointerEvents: 'none',
           }}
         >
           <FiCheck size={24} />
@@ -93,106 +123,135 @@ function TodoCard({
             scale: deleteScale,
             color: '#ff4444',
             zIndex: 0,
+            pointerEvents: 'none',
           }}
         >
           <FiTrash2 size={24} />
         </motion.div>
 
-        <motion.div
-          layout
-          style={{
-            x,
-            background,
-            opacity,
-            position: 'relative',
-            width: '100%',
-            padding: isMobile ? '1rem 0.75rem' : '1rem',
-            borderRadius: '8px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-            cursor: isDragging ? 'grabbing' : 'grab',
-            touchAction: 'none',
-            backgroundColor: isCompleted ? '#f0fdf4' : isRemoved ? '#fef2f2' : '#fff',
-            userSelect: 'none',
-            zIndex: 1,
-          }}
-          whileHover={{ scale: 1.02 }}
-          onContextMenu={handleContextMenu}
-          onClick={onSelect}
-          drag={!isCompleted && !isRemoved ? "x" : false}
-          dragConstraints={{ left: -150, right: 150 }}
-          dragElastic={0.5}
-          onDragEnd={handleDragEnd}
-          dragMomentum={false}
-        >
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: '0.5rem',
-            pointerEvents: 'none',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
-              {!isCompleted && !isRemoved && (
-                <div
-                  onPointerDown={(e) => dragControls?.start(e)}
-                  style={{ 
-                    color: '#666', 
-                    cursor: 'grab',
-                    touchAction: 'none',
-                    pointerEvents: 'auto',
-                  }}
-                >
-                  <FiMenu />
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: '0.5rem',
+          pointerEvents: 'none',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+            {!isCompleted && !isRemoved && (
+              <div
+                onPointerDown={(e) => {
+                  setIsDraggingHandle(true);
+                  dragControls?.start(e);
+                }}
+                onPointerUp={() => {
+                  setIsDraggingHandle(false);
+                }}
+                style={{ 
+                  color: '#666', 
+                  cursor: 'grab',
+                  touchAction: 'none',
+                  pointerEvents: 'auto',
+                }}
+              >
+                <FiMenu />
+              </div>
+            )}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h3 style={{ 
+                fontSize: '1rem', 
+                marginBottom: '0.5rem',
+                fontFamily: 'Poppins, sans-serif',
+                color: '#333',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                textDecoration: isCompleted ? 'line-through' : 'none',
+              }}>{todo.title}</h3>
+              <div style={{ 
+                display: 'flex', 
+                flexDirection: 'column',
+                gap: '0.25rem', 
+                fontSize: '0.8rem',
+                color: '#666'
+              }}>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <FiClock /> {todo.dueDate}
+                  </span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <FiTag /> {todo.priority}
+                  </span>
                 </div>
-              )}
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <h3 style={{ 
-                  fontSize: '1rem', 
-                  marginBottom: '0.5rem',
-                  fontFamily: 'Poppins, sans-serif',
-                  color: '#333',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  textDecoration: isCompleted ? 'line-through' : 'none',
-                }}>{todo.title}</h3>
-                <div style={{ 
-                  display: 'flex', 
-                  flexDirection: 'column',
-                  gap: '0.25rem', 
-                  fontSize: '0.8rem',
-                  color: '#666'
-                }}>
-                  <div style={{ display: 'flex', gap: '1rem' }}>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <FiClock /> {todo.dueDate}
-                    </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                      <FiTag /> {todo.priority}
-                    </span>
-                  </div>
-                  {timestamp && (
-                    <span style={{ fontSize: '0.75rem', color: '#888' }}>
-                      {isCompleted ? 'Completed' : 'Removed'} at: {formattedTimestamp}
-                    </span>
-                  )}
-                </div>
+                {timestamp && (
+                  <span style={{ fontSize: '0.75rem', color: '#888' }}>
+                    {isCompleted ? 'Completed' : 'Removed'} at: {formattedTimestamp}
+                  </span>
+                )}
               </div>
             </div>
-            <div style={{ 
-              display: 'flex', 
-              gap: '0.75rem',
-              marginLeft: 'auto',
-              padding: isMobile ? '0.25rem' : 0,
-              pointerEvents: 'auto',
-            }}>
-              {onRestore ? (
+          </div>
+          <div style={{ 
+            display: 'flex', 
+            gap: '0.75rem',
+            marginLeft: 'auto',
+            padding: isMobile ? '0.25rem' : 0,
+            pointerEvents: 'auto',
+          }}>
+            {onRestore ? (
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRestore();
+                }}
+                style={{
+                  backgroundColor: '#528F75',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '50%',
+                  width: buttonSize,
+                  height: buttonSize,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
+              >
+                <FiRefreshCw size={iconSize} />
+              </motion.button>
+            ) : (
+              <>
                 <motion.button
                   whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   onClick={(e) => {
                     e.stopPropagation();
-                    onRestore();
+                    onDelete(todo.id);
+                  }}
+                  style={{
+                    backgroundColor: '#fee2e2',
+                    color: '#ef4444',
+                    border: 'none',
+                    borderRadius: '50%',
+                    width: buttonSize,
+                    height: buttonSize,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
+                >
+                  <FiTrash2 size={iconSize} />
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onComplete(todo.id);
                   }}
                   style={{
                     backgroundColor: '#528F75',
@@ -208,62 +267,13 @@ function TodoCard({
                     padding: 0,
                   }}
                 >
-                  <FiRefreshCw size={iconSize} />
+                  <FiCheck size={iconSize} />
                 </motion.button>
-              ) : (
-                <>
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(todo.id);
-                    }}
-                    style={{
-                      backgroundColor: '#fee2e2',
-                      color: '#ef4444',
-                      border: 'none',
-                      borderRadius: '50%',
-                      width: buttonSize,
-                      height: buttonSize,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      padding: 0,
-                    }}
-                  >
-                    <FiTrash2 size={iconSize} />
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onComplete(todo.id);
-                    }}
-                    style={{
-                      backgroundColor: '#528F75',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '50%',
-                      width: buttonSize,
-                      height: buttonSize,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      padding: 0,
-                    }}
-                  >
-                    <FiCheck size={iconSize} />
-                  </motion.button>
-                </>
-              )}
-            </div>
+              </>
+            )}
           </div>
-        </motion.div>
-      </div>
+        </div>
+      </motion.div>
 
       {showContextMenu && (
         <ContextMenu

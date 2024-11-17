@@ -262,6 +262,10 @@ function TodoPage() {
                     padding: 0,
                     width: '100%',
                     position: 'relative',
+                    userSelect: 'none',
+                    WebkitUserSelect: 'none',
+                    MozUserSelect: 'none',
+                    msUserSelect: 'none',
                   }}
                 >
                   {renderTodoCard(todo, 'active')}
