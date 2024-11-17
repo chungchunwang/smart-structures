@@ -7,14 +7,14 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
-// const firebaseConfig = {
-//   apiKey: "AIzaSyAL4QMJLKURz3XUw2jk9oYK1EFcYV5hqvU",
-//   authDomain: "hackutd-9aec1.firebaseapp.com",
-//   projectId: "hackutd-9aec1",
-//   storageBucket: "hackutd-9aec1.firebasestorage.app",
-//   messagingSenderId: "187748899748",
-//   appId: "1:187748899748:web:c0e217d49f1bee806e7f31"
-// };
+const firebaseConfig = {
+  apiKey: "AIzaSyAL4QMJLKURz3XUw2jk9oYK1EFcYV5hqvU",
+  authDomain: "hackutd-9aec1.firebaseapp.com",
+  projectId: "hackutd-9aec1",
+  storageBucket: "hackutd-9aec1.firebasestorage.app",
+  messagingSenderId: "187748899748",
+  appId: "1:187748899748:web:c0e217d49f1bee806e7f31"
+};
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
