@@ -26,24 +26,24 @@ function TodoCard({
   const x = useMotionValue(0);
   const background = useTransform(
     x,
-    [-150, -75, 0, 75, 150],
+    [-200, -100, 0, 100, 200],
     ['#4ADE80', '#4ADE8080', '#ffffff', '#ff444480', '#ff4444']
   );
   const opacity = useTransform(
     x, 
-    [-150, -75, 0, 75, 150], 
+    [-200, -100, 0, 100, 200], 
     [0.8, 0.9, 1, 0.9, 0.8]
   );
 
   const completeScale = useTransform(
     x,
-    [-150, -75, 0],
+    [-200, -100, 0],
     [1.2, 1, 0]
   );
 
   const deleteScale = useTransform(
     x,
-    [0, 75, 150],
+    [0, 100, 200],
     [0, 1, 1.2]
   );
 
@@ -61,9 +61,9 @@ function TodoCard({
   const handleDragEnd = () => {
     if (!isDraggingHandle) {
       const xValue = x.get();
-      if (xValue <= -75 && onComplete) {
+      if (xValue <= -100 && onComplete) {
         onComplete(todo.id);
-      } else if (xValue >= 75 && onDelete) {
+      } else if (xValue >= 100 && onDelete) {
         onDelete(todo.id);
       }
     }
@@ -95,10 +95,16 @@ function TodoCard({
         onContextMenu={handleContextMenu}
         onClick={onSelect}
         drag={!isCompleted && !isRemoved && !isDraggingHandle ? "x" : undefined}
-        dragConstraints={{ left: -150, right: 150 }}
-        dragElastic={0.5}
-        onDragEnd={handleDragEnd}
+        dragConstraints={{ left: -200, right: 200 }}
+        dragElastic={0.3}
         dragMomentum={false}
+        dragTransition={{ 
+          power: 0.3,
+          timeConstant: 200,
+          min: -200,
+          max: 200
+        }}
+        onDragEnd={handleDragEnd}
       >
         <motion.div
           style={{
