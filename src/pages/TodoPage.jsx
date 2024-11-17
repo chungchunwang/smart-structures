@@ -251,25 +251,7 @@ function TodoPage() {
               }}
             >
               {filteredTodos.map((todo) => {
-                const dragControls = useDragControls();
                 return (
-                <Reorder.Item
-                  key={todo.id}
-                  value={todo}
-                  dragListener={false}
-                  dragControls={dragControls}
-                  style={{
-                    listStyle: 'none',
-                    margin: 0,
-                    padding: 0,
-                    width: '100%',
-                    position: 'relative',
-                    userSelect: 'none',
-                    WebkitUserSelect: 'none',
-                    MozUserSelect: 'none',
-                    msUserSelect: 'none',
-                  }}
-                >
                   <TodoCard
       todo={todo}
       onComplete={handleComplete}
@@ -278,10 +260,10 @@ function TodoPage() {
       onPriorityChange={handlePriorityChange}
       isDragging={false}
       onSelect={() => setSelectedTodo(todo)}
-      dragControls={dragControls}
+                    dragControls={dragControls}
+                    key={todo.id}
                   />
-                </Reorder.Item>
-              );
+                );
               })}
             </Reorder.Group>
           )}

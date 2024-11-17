@@ -4,7 +4,8 @@ import { FiCheck, FiClock, FiTag, FiMenu, FiTrash2, FiRefreshCw, FiMoreVertical 
 import { useState } from 'react';
 import ContextMenu from './ContextMenu';
 import useIsMobile from '../hooks/useIsMobile';
-
+import { useDragControls } from 'framer-motion';
+import { Reorder } from 'framer-motion';
 function TodoCard({ 
   todo, 
   onComplete, 
@@ -16,12 +17,12 @@ function TodoCard({
   isCompleted,
   isRemoved,
   timestamp,
-  dragControls
 }) {
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
   const [isDraggingHandle, setIsDraggingHandle] = useState(false);
   const isMobile = useIsMobile();
+  const dragControls = useDragControls();
   
   const x = useMotionValue(0);
   const background = useTransform(
@@ -71,7 +72,23 @@ function TodoCard({
   };
 
   return (
-    <>
+    <Reorder.Item
+                  key={todo.id}
+                  value={todo}
+                  dragListener={false}
+                  dragControls={dragControls}
+                  style={{
+                    listStyle: 'none',
+                    margin: 0,
+                    padding: 0,
+                    width: '100%',
+                    position: 'relative',
+                    userSelect: 'none',
+                    WebkitUserSelect: 'none',
+                    MozUserSelect: 'none',
+                    msUserSelect: 'none',
+                  }}
+                >
       <motion.div
         style={{
           x,
@@ -291,7 +308,7 @@ function TodoCard({
           currentPriority={todo.priority}
         />
       )}
-    </>
+    </Reorder.Item>
   );
 }
 
