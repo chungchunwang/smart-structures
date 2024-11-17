@@ -36,10 +36,30 @@ const getIconByType = (type) => {
 };
 
 function DashboardPage() {
-  const { sensorData, loading } = useSensorData();
+  const { sensorData, loading: sensorLoading } = useSensorData();
   const [selectedDevice, setSelectedDevice] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const isMobile = useIsMobile();
+  const [taskStats, setTaskStats] = useState(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  // Fetch task statistics
+  useEffect(() => {
+    const fetchTaskStats = async () => {
+      try {
+        const response = await fetch('https://novel-gibbon-related.ngrok-free.app/taskstats');
+        if (!response.ok) throw new Error('Failed to fetch task stats');
+        const data = await response.json();
+        setTaskStats(data);
+      } catch (error) {
+        console.error('Error fetching task stats:', error);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+
+    fetchTaskStats();
+  }, []);
 
   // Set initial selected device once data is loaded
   useEffect(() => {
@@ -48,39 +68,39 @@ function DashboardPage() {
     }
   }, [sensorData, selectedDevice]);
 
-  // Mock stats data - replace with real data
+  // Updated stats data using real data
   const stats = [
     {
-      title: "Tasks Today",
-      value: "5",
+      title: "Due Today",
+      value: taskStats?.Due_Today || "0",
       icon: FiClock,
       color: "#3b82f6",
       bgColor: "#dbeafe"
     },
     {
       title: "High Priority",
-      value: "3",
+      value: taskStats?.High || "0",
       icon: FiAlertCircle,
       color: "#ef4444",
       bgColor: "#fee2e2"
     },
     {
       title: "Completed",
-      value: "12",
+      value: taskStats?.Completed || "0",
       icon: FiCheckCircle,
       color: "#10b981",
       bgColor: "#d1fae5"
     },
     {
       title: "This Week",
-      value: "23",
+      value: taskStats?.Due_This_Week || "0",
       icon: FiCalendar,
       color: "#8b5cf6",
       bgColor: "#ede9fe"
     },
   ];
 
-  if (loading || !selectedDevice) {
+  if (sensorLoading || statsLoading || !selectedDevice) {
     return (
       <div style={{
         height: '100%',

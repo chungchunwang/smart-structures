@@ -37,7 +37,7 @@ function TriggerNode({ data, isConnectable }) {
         }}
       >
         <option value="time">Time-based</option>
-        <option value="webhook">Webhook</option>
+        <option value="hook">Hook</option>
       </select>
 
       {triggerType === 'time' ? (
@@ -58,7 +58,7 @@ function TriggerNode({ data, isConnectable }) {
         <input
           value={webhookPath}
           onChange={(e) => setWebhookPath(e.target.value)}
-          placeholder="Webhook Path (/hooks/my-trigger)"
+          placeholder="Path (/hooks/my-trigger)"
           style={{
             width: '100%',
             padding: '0.5rem',

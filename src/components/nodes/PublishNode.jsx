@@ -2,7 +2,6 @@ import { Handle } from '@xyflow/react';
 import { useState } from 'react';
 
 function PublishNode({ data, isConnectable }) {
-  const [ruleId, setRuleId] = useState(data.properties?.rule_id || '');
   const [email, setEmail] = useState(data.properties?.action_data?.to || '');
   const [body, setBody] = useState(data.properties?.action_data?.body || '');
 
@@ -28,20 +27,6 @@ function PublishNode({ data, isConnectable }) {
       }}>
         Email Alert
       </div>
-      <input
-        value={ruleId}
-        onChange={(e) => setRuleId(e.target.value)}
-        placeholder="Rule ID"
-        style={{
-          width: '100%',
-          padding: '0.5rem',
-          borderRadius: '4px',
-          border: '1px solid #e2e8f0',
-          marginBottom: '0.5rem',
-          fontSize: '0.9rem',
-          boxSizing: 'border-box',
-        }}
-      />
       <input
         value={email}
         onChange={(e) => setEmail(e.target.value)}

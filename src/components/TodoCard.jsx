@@ -1,7 +1,7 @@
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { FiCheck, FiClock, FiTag, FiMenu, FiTrash2, FiRefreshCw, FiMoreVertical } from 'react-icons/fi';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import ContextMenu from './ContextMenu';
 import useIsMobile from '../hooks/useIsMobile';
 import { useDragControls } from 'framer-motion';
@@ -48,26 +48,8 @@ function TodoCard({
     [0, 1, 1.2]
   );
 
-  useEffect(() => {
-    if (showContextMenu) {
-      const handleClickOutside = (e) => {
-        // Close the context menu if clicking outside
-        setShowContextMenu(false);
-      };
-
-      // Add the event listener
-      window.addEventListener('click', handleClickOutside);
-
-      // Clean up
-      return () => {
-        window.removeEventListener('click', handleClickOutside);
-      };
-    }
-  }, [showContextMenu]);
-
   const handleContextMenu = (e) => {
     e.preventDefault();
-    e.stopPropagation(); // Prevent the window click event from firing immediately
     setContextMenuPosition({ x: e.clientX, y: e.clientY });
     setShowContextMenu(true);
   };
@@ -327,7 +309,6 @@ function TodoCard({
           onDelete={() => onDelete(todo.id)}
           onPriorityChange={(priority) => onPriorityChange(todo.id, priority)}
           currentPriority={todo.priority}
-          onClick={(e) => e.stopPropagation()} // Prevent the window click event from closing the menu when clicking inside it
         />
       )}
     </Reorder.Item>

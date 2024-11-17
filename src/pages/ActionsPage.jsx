@@ -9,7 +9,7 @@ import {
   Panel,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import { FiPlus, FiSave, FiFile, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiSave, FiFile, FiTrash2, FiRefreshCw } from 'react-icons/fi';
 import useIsMobile from '../hooks/useIsMobile';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -38,7 +38,7 @@ const initialNodes = [
       label: 'Trigger',
       properties: {
         type: 'time',
-        cron: '*/5 * * * *'
+        cron: '0'
       }
     },
   },
@@ -53,6 +53,8 @@ function ActionsPage() {
   const [showScriptList, setShowScriptList] = useState(!isMobile);
   const [showNewScriptModal, setShowNewScriptModal] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingNodes, setLoadingNodes] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     fetchActionScripts();
@@ -107,9 +109,20 @@ function ActionsPage() {
     }
   };
 
-  const generateSchema = () => {
+  const generateSchema = async () => {
+    if (!selectedScript) {
+      console.error('No script selected');
+      return;
+    }
+
+    // Find the trigger node (start node)
+    const startNode = nodes.find(node => node.type === 'trigger');
+    if (!startNode) {
+      console.error('No trigger node found');
+      return;
+    }
+
     const schema = {
-      start_node: 'trigger1',
       nodes: nodes.map(node => {
         const baseNode = {
           id: node.id,
@@ -131,35 +144,308 @@ function ActionsPage() {
               input1: input1Edge?.source || '',
               input2: input2Edge?.source || '',
             },
+            next: [],
             next_true: trueEdge ? [trueEdge.target] : [],
             next_false: falseEdge ? [falseEdge.target] : [],
           };
         } else if (node.type === 'publish' || node.type === 'task') {
           return {
             ...baseNode,
-            next: [], // Terminal nodes
+            next: [],
+            next_true: [],
+            next_false: [],
           };
         } else {
           const nextEdges = edges.filter(e => e.source === node.id);
           return {
             ...baseNode,
             next: nextEdges.map(e => e.target),
+            next_true: [],
+            next_false: [],
           };
         }
       }),
+      start_node: {
+        id: startNode.id,
+        type: startNode.type,
+        properties: startNode.data.properties || {},
+        next: edges
+          .filter(e => e.source === startNode.id)
+          .map(e => e.target),
+        next_true: [],
+        next_false: [],
+      }
     };
 
-    console.log('Generated Schema:', JSON.stringify(schema, null, 2));
+    try {
+      const response = await fetch(
+        `https://novel-gibbon-related.ngrok-free.app/action/${selectedScript.action_id}/nodes`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(schema)
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to save flow');
+      }
+
+      // Show success message or update UI
+      console.log('Flow saved successfully');
+    } catch (error) {
+      console.error('Error saving flow:', error);
+      // Show error message to user
+    }
   };
 
-  const handleNewScript = (scriptData) => {
-    // Add the new script to the list
-    const newScript = {
-      ...scriptData,
-      nodes: [], // Initialize with empty nodes
+  const handleNewScript = async (scriptData) => {
+    const newActionTemplate = {
+      name: scriptData.name,
+      description: scriptData.description,
+      enabled: true,
+      interval: 3600, // Default to hourly
+      start_node: 'trigger1',
+      nodes: [
+        {
+          id: 'trigger1',
+          type: 'trigger',
+          properties: {
+            type: 'time',
+            cron: '0'
+          },
+          next: [],
+          next_true: [],
+          next_false: []
+        }
+      ]
     };
-    // You would typically update this in your backend
-    console.log('New script created:', newScript);
+
+    try {
+      const response = await fetch('https://novel-gibbon-related.ngrok-free.app/action/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newActionTemplate)
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create action');
+      }
+
+      const createdAction = await response.json();
+      
+      // Fetch the updated list of scripts
+      await fetchActionScripts();
+      
+      setShowNewScriptModal(false);
+      
+      // Select the newly created script
+      handleScriptSelect(createdAction);
+    } catch (error) {
+      console.error('Error creating new action:', error);
+      // Optionally show an error message to the user
+    }
+  };
+
+  const handleScriptSelect = async (script) => {
+    setSelectedScript(script);
+    setLoadingNodes(true);
+    
+    try {
+      const response = await fetch(`https://novel-gibbon-related.ngrok-free.app/action/${script.action_id}/nodes`);
+      if (!response.ok) throw new Error('Failed to fetch nodes');
+      
+      const nodeData = await response.json();
+      console.log("hello", nodeData);
+      
+      // Transform the node data into the format ReactFlow expects
+      const transformedNodes = nodeData.nodes.map(node => ({
+        id: node.id,
+        type: node.type,
+        position: node.position || { x: 250, y: 0 }, // Use stored position or default
+        data: {
+          label: node.type.charAt(0).toUpperCase() + node.type.slice(1),
+          properties: node.properties || {}
+        }
+      }));
+
+      // Create edges based on the node connections
+      const newEdges = [];
+      nodeData.nodes.forEach(node => {
+        if (node.next) {
+          // Handle standard next connections
+          node.next.forEach(targetId => {
+            newEdges.push({
+              id: `${node.id}-${targetId}`,
+              source: node.id,
+              target: targetId,
+            });
+          });
+        }
+        if (node.next_true) {
+          // Handle compare node true connections
+          node.next_true.forEach(targetId => {
+            newEdges.push({
+              id: `${node.id}-${targetId}-true`,
+              source: node.id,
+              target: targetId,
+              sourceHandle: 'true',
+            });
+          });
+        }
+        if (node.next_false) {
+          // Handle compare node false connections
+          node.next_false.forEach(targetId => {
+            newEdges.push({
+              id: `${node.id}-${targetId}-false`,
+              source: node.id,
+              target: targetId,
+              sourceHandle: 'false',
+            });
+          });
+        }
+      });
+
+      setNodes(transformedNodes);
+      setEdges(newEdges);
+    } catch (error) {
+      console.error('Error loading nodes:', error);
+      // Optionally show an error message to the user
+    } finally {
+      setLoadingNodes(false);
+    }
+  };
+
+  const scriptListItem = (script) => (
+    <motion.div
+      key={script.action_id}
+      onClick={() => handleScriptSelect(script)}
+      whileHover={{ scale: 1.02 }}
+      style={{
+        padding: '1rem',
+        backgroundColor: selectedScript?.action_id === script.action_id ? '#528F75' : '#fff',
+        color: selectedScript?.action_id === script.action_id ? '#fff' : '#334155',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        border: '1px solid #e2e8f0',
+      }}
+    >
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        marginBottom: '0.25rem',
+      }}>
+        <FiFile />
+        <span style={{ fontWeight: 'medium' }}>{script.name}</span>
+      </div>
+      {script.description && (
+        <p style={{
+          fontSize: '0.8rem',
+          opacity: 0.8,
+          margin: 0,
+        }}>{script.description}</p>
+      )}
+    </motion.div>
+  );
+
+  const renderFlow = () => {
+    if (loadingNodes) {
+      return (
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          color: '#666',
+        }}>
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          >
+            <FiRefreshCw />
+          </motion.div>
+          Loading nodes...
+        </div>
+      );
+    }
+
+    return (
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
+        onConnect={onConnect}
+        nodeTypes={nodeTypes}
+        fitView
+        proOptions={{hideAttribution: true}}
+      >
+        <Background />
+        <Controls />
+        <Panel position="top-left" style={{
+          backgroundColor: '#fff',
+          padding: '0.5rem',
+          borderRadius: '8px',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '0.5rem',
+        }}>
+          <button onClick={() => addNode('getData')} style={{
+            backgroundColor: '#528F75',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '0.5rem 1rem',
+            cursor: 'pointer',
+            fontFamily: 'Poppins, sans-serif',
+          }}>
+            <FiPlus /> Get Data
+          </button>
+          <button onClick={() => addNode('compare')} style={{
+            backgroundColor: '#528F75',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '0.5rem 1rem',
+            cursor: 'pointer',
+            fontFamily: 'Poppins, sans-serif',
+          }}>
+            <FiPlus /> Compare
+          </button>
+          <button onClick={() => addNode('publish')} style={{
+            backgroundColor: '#528F75',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '0.5rem 1rem',
+            cursor: 'pointer',
+            fontFamily: 'Poppins, sans-serif',
+          }}>
+            <FiPlus /> Email
+          </button>
+          <button onClick={() => addNode('task')} style={{
+            backgroundColor: '#528F75',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '0.5rem 1rem',
+            cursor: 'pointer',
+            fontFamily: 'Poppins, sans-serif',
+          }}>
+            <FiPlus /> Create Task
+          </button>
+        </Panel>
+      </ReactFlow>
+    );
   };
 
   return (
@@ -219,38 +505,7 @@ function ActionsPage() {
               flexDirection: 'column',
               gap: '0.5rem',
             }}>
-              {actionScripts.map(script => (
-                <motion.div
-                  key={script.action_id}
-                  onClick={() => setSelectedScript(script)}
-                  whileHover={{ scale: 1.02 }}
-                  style={{
-                    padding: '1rem',
-                    backgroundColor: selectedScript?.action_id === script.action_id ? '#528F75' : '#fff',
-                    color: selectedScript?.action_id === script.action_id ? '#fff' : '#334155',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    border: '1px solid #e2e8f0',
-                  }}
-                >
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    marginBottom: '0.25rem',
-                  }}>
-                    <FiFile />
-                    <span style={{ fontWeight: 'medium' }}>{script.name}</span>
-                  </div>
-                  {script.description && (
-                    <p style={{
-                      fontSize: '0.8rem',
-                      opacity: 0.8,
-                      margin: 0,
-                    }}>{script.description}</p>
-                  )}
-                </motion.div>
-              ))}
+              {actionScripts.map(script => scriptListItem(script))}
             </div>
           )}
         </div>
@@ -274,7 +529,11 @@ function ActionsPage() {
           <h1 style={{ fontSize: '1.25rem', color: '#334155' }}>Action Editor</h1>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button
-              onClick={generateSchema}
+              onClick={async () => {
+                setIsSaving(true);
+                await generateSchema();
+                setIsSaving(false);
+              }}
               style={{
                 backgroundColor: '#528F75',
                 color: 'white',
@@ -286,81 +545,27 @@ function ActionsPage() {
                 gap: '0.5rem',
                 cursor: 'pointer',
                 fontFamily: 'Poppins, sans-serif',
+                opacity: isSaving ? 0.7 : 1,
               }}
+              disabled={isSaving}
             >
-              <FiSave />
-              Save Flow
+              {isSaving ? (
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                >
+                  <FiRefreshCw />
+                </motion.div>
+              ) : (
+                <FiSave />
+              )}
+              {isSaving ? 'Saving...' : 'Save Flow'}
             </button>
           </div>
         </div>
 
         <div style={{ flex: 1, position: 'relative' }}>
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            nodeTypes={nodeTypes}
-            fitView
-          >
-            <Background />
-            <Controls />
-            <Panel position="top-left" style={{
-              backgroundColor: '#fff',
-              padding: '0.5rem',
-              borderRadius: '8px',
-              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '0.5rem',
-            }}>
-              <button onClick={() => addNode('getData')} style={{
-                backgroundColor: '#528F75',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '0.5rem 1rem',
-                cursor: 'pointer',
-                fontFamily: 'Poppins, sans-serif',
-              }}>
-                <FiPlus /> Get Data
-              </button>
-              <button onClick={() => addNode('compare')} style={{
-                backgroundColor: '#528F75',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '0.5rem 1rem',
-                cursor: 'pointer',
-                fontFamily: 'Poppins, sans-serif',
-              }}>
-                <FiPlus /> Compare
-              </button>
-              <button onClick={() => addNode('publish')} style={{
-                backgroundColor: '#528F75',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '0.5rem 1rem',
-                cursor: 'pointer',
-                fontFamily: 'Poppins, sans-serif',
-              }}>
-                <FiPlus /> Email
-              </button>
-              <button onClick={() => addNode('task')} style={{
-                backgroundColor: '#528F75',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                padding: '0.5rem 1rem',
-                cursor: 'pointer',
-                fontFamily: 'Poppins, sans-serif',
-              }}>
-                <FiPlus /> Create Task
-              </button>
-            </Panel>
-          </ReactFlow>
+          {renderFlow()}
         </div>
       </div>
 
