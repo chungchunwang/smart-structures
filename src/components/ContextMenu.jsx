@@ -2,7 +2,7 @@ import { motion } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { FiTrash2, FiFlag } from 'react-icons/fi';
 
-function ContextMenu({ x, y, onClose, onDelete, onPriorityChange, currentPriority }) {
+function ContextMenu({ x, y, onClose, onDelete, onPriorityChange, currentPriority, onClick }) {
   const priorities = ['High', 'Medium', 'Low'];
 
   return (
@@ -10,6 +10,7 @@ function ContextMenu({ x, y, onClose, onDelete, onPriorityChange, currentPriorit
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.95 }}
+      onClick={onClick}
       style={{
         position: 'fixed',
         top: y,
@@ -98,6 +99,7 @@ ContextMenu.propTypes = {
   onDelete: PropTypes.func.isRequired,
   onPriorityChange: PropTypes.func.isRequired,
   currentPriority: PropTypes.string.isRequired,
+  onClick: PropTypes.func.isRequired,
 };
 
 export default ContextMenu; 

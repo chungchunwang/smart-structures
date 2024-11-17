@@ -148,39 +148,6 @@ function NewScriptModal({ onClose, onSave }) {
             />
           </div>
 
-          <div>
-            <label
-              htmlFor="category"
-              style={{
-                display: 'block',
-                marginBottom: '0.5rem',
-                color: '#334155',
-                fontSize: '0.9rem',
-              }}
-            >
-              Category
-            </label>
-            <select
-              id="category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                borderRadius: '6px',
-                border: '1px solid #e2e8f0',
-                fontSize: '0.9rem',
-                backgroundColor: '#fff',
-                boxSizing: 'border-box',
-              }}
-            >
-              <option value="monitoring">Monitoring</option>
-              <option value="maintenance">Maintenance</option>
-              <option value="alerts">Alerts</option>
-              <option value="automation">Automation</option>
-            </select>
-          </div>
-
           <div style={{
             display: 'flex',
             gap: '1rem',

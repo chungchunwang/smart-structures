@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import {
   ReactFlow,
   Controls,
@@ -44,35 +44,34 @@ const initialNodes = [
   },
 ];
 
-// Mock action scripts data
-const actionScripts = [
-  {
-    id: '1',
-    name: 'Temperature Alert',
-    description: 'Alerts when temperature exceeds threshold',
-    lastModified: '2024-01-20',
-  },
-  {
-    id: '2',
-    name: 'Daily Maintenance Check',
-    description: 'Creates maintenance tasks daily',
-    lastModified: '2024-01-19',
-  },
-  {
-    id: '3',
-    name: 'Power Usage Monitor',
-    description: 'Monitors and reports high power usage',
-    lastModified: '2024-01-18',
-  },
-];
-
 function ActionsPage() {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const isMobile = useIsMobile();
-  const [selectedScript, setSelectedScript] = useState(actionScripts[0]);
+  const [actionScripts, setActionScripts] = useState([]);
+  const [selectedScript, setSelectedScript] = useState(null);
   const [showScriptList, setShowScriptList] = useState(!isMobile);
   const [showNewScriptModal, setShowNewScriptModal] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchActionScripts();
+  }, []);
+
+  const fetchActionScripts = async () => {
+    try {
+      const response = await fetch('https://novel-gibbon-related.ngrok-free.app/action');
+      const data = await response.json();
+      setActionScripts(data);
+      if (data.length > 0) {
+        setSelectedScript(data[0]);
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching action scripts:', error);
+      setLoading(false);
+    }
+  };
 
   const onConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),
@@ -206,49 +205,54 @@ function ActionsPage() {
             </button>
           </div>
 
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '0.5rem',
-          }}>
-            {actionScripts.map(script => (
-              <motion.div
-                key={script.id}
-                onClick={() => setSelectedScript(script)}
-                whileHover={{ scale: 1.02 }}
-                style={{
-                  padding: '1rem',
-                  backgroundColor: selectedScript.id === script.id ? '#528F75' : '#fff',
-                  color: selectedScript.id === script.id ? '#fff' : '#334155',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  border: '1px solid #e2e8f0',
-                }}
-              >
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  marginBottom: '0.25rem',
-                }}>
-                  <FiFile />
-                  <span style={{ fontWeight: 'medium' }}>{script.name}</span>
-                </div>
-                <p style={{
-                  fontSize: '0.8rem',
-                  opacity: 0.8,
-                  margin: 0,
-                }}>{script.description}</p>
-                <div style={{
-                  fontSize: '0.75rem',
-                  marginTop: '0.5rem',
-                  opacity: 0.7,
-                }}>
-                  Modified: {script.lastModified}
-                </div>
-              </motion.div>
-            ))}
-          </div>
+          {loading ? (
+            <div style={{ 
+              padding: '1rem', 
+              textAlign: 'center',
+              color: '#666'
+            }}>
+              Loading scripts...
+            </div>
+          ) : (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.5rem',
+            }}>
+              {actionScripts.map(script => (
+                <motion.div
+                  key={script.action_id}
+                  onClick={() => setSelectedScript(script)}
+                  whileHover={{ scale: 1.02 }}
+                  style={{
+                    padding: '1rem',
+                    backgroundColor: selectedScript?.action_id === script.action_id ? '#528F75' : '#fff',
+                    color: selectedScript?.action_id === script.action_id ? '#fff' : '#334155',
+                    borderRadius: '8px',
+                    cursor: 'pointer',
+                    border: '1px solid #e2e8f0',
+                  }}
+                >
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    marginBottom: '0.25rem',
+                  }}>
+                    <FiFile />
+                    <span style={{ fontWeight: 'medium' }}>{script.name}</span>
+                  </div>
+                  {script.description && (
+                    <p style={{
+                      fontSize: '0.8rem',
+                      opacity: 0.8,
+                      margin: 0,
+                    }}>{script.description}</p>
+                  )}
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

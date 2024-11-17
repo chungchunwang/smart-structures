@@ -7,6 +7,8 @@ import UserMenu from './components/UserMenu';
 import DashboardPage from './pages/DashboardPage';
 import TodoPage from './pages/TodoPage';
 import ActionsPage from './pages/ActionsPage';
+import ProtectedRoute from './components/ProtectedRoute';
+import LandingPage from './pages/LandingPage';
 
 function App() {
   const isMobile = useIsMobile();
@@ -83,9 +85,9 @@ function App() {
           paddingBottom: isMobile ? '80px' : '0',
         }}>
           <Routes>
-            <Route path="/" element={<DashboardPage />} />
-            <Route path="/todos" element={<TodoPage />} />
-            <Route path="/actions" element={<ActionsPage />} />
+            <Route path="/" element={<ProtectedRoute fallback={<LandingPage />}><DashboardPage /></ProtectedRoute>} />
+            <Route path="/todos" element={<ProtectedRoute><TodoPage /></ProtectedRoute>} />
+            <Route path="/actions" element={<ProtectedRoute><ActionsPage /></ProtectedRoute>} />
           </Routes>
         </main>
 

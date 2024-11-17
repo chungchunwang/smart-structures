@@ -44,7 +44,7 @@ function TriggerNode({ data, isConnectable }) {
         <input
           value={cronExpression}
           onChange={(e) => setCronExpression(e.target.value)}
-          placeholder="Cron Expression (*/5 * * * *)"
+          placeholder="0"
           style={{
             width: '100%',
             padding: '0.5rem',
