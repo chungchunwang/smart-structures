@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from 'react';
-import { motion, Reorder, AnimatePresence } from 'framer-motion';
+import { motion, Reorder, AnimatePresence, useDragControls } from 'framer-motion';
 import TodoCard from '../components/TodoCard';
 import TaskDetailModal from '../components/TaskDetailModal';
 import Toast from '../components/Toast';
@@ -147,6 +147,8 @@ function TodoPage() {
     setTodos(reorderedTodos);
   };
 
+  const dragControls = useDragControls();
+
   const renderTodoCard = (todo, source) => (
     <TodoCard
       todo={todo}
@@ -159,6 +161,7 @@ function TodoPage() {
       isCompleted={source === 'Completed'}
       isRemoved={source === 'Removed'}
       timestamp={source === 'Completed' ? todo.completedAt : source === 'Removed' ? todo.removedAt : undefined}
+      dragControls={source === 'active' ? dragControls : undefined}
     />
   );
 
@@ -251,6 +254,8 @@ function TodoPage() {
                 <Reorder.Item
                   key={todo.id}
                   value={todo}
+                  dragListener={false}
+                  dragControls={dragControls}
                   style={{
                     listStyle: 'none',
                     margin: 0,

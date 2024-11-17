@@ -1,6 +1,6 @@
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import PropTypes from 'prop-types';
-import { FiCheck, FiClock, FiTag, FiMenu, FiTrash2, FiRefreshCw } from 'react-icons/fi';
+import { FiCheck, FiClock, FiTag, FiMenu, FiTrash2, FiRefreshCw, FiMoreVertical } from 'react-icons/fi';
 import { useState } from 'react';
 import ContextMenu from './ContextMenu';
 import useIsMobile from '../hooks/useIsMobile';
@@ -15,7 +15,8 @@ function TodoCard({
   onSelect,
   isCompleted,
   isRemoved,
-  timestamp
+  timestamp,
+  dragControls
 }) {
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
@@ -25,9 +26,9 @@ function TodoCard({
   const background = useTransform(
     x,
     [-100, 0, 100],
-    ['#4ADE80', '#ffffff', '#ffffff']
+    ['#4ADE80', '#ffffff', '#ff4444']
   );
-  const opacity = useTransform(x, [-100, 0, 100], [0.5, 1, 1]);
+  const opacity = useTransform(x, [-100, 0, 100], [0.5, 1, 0.5]);
 
   const handleContextMenu = (e) => {
     e.preventDefault();
@@ -39,6 +40,17 @@ function TodoCard({
   const iconSize = isMobile ? 20 : 16;
 
   const formattedTimestamp = timestamp ? new Date(timestamp).toLocaleString() : null;
+
+  const handleDragEnd = () => {
+    const xValue = x.get();
+    if (xValue <= -100 && onComplete) {
+      onComplete(todo.id);
+    } else if (xValue >= 100 && onDelete) {
+      onDelete(todo.id);
+    } else {
+      x.set(0); // Reset position if not enough to trigger action
+    }
+  };
 
   return (
     <>
@@ -57,19 +69,37 @@ function TodoCard({
           cursor: isDragging ? 'grabbing' : 'grab',
           touchAction: 'none',
           backgroundColor: isCompleted ? '#f0fdf4' : isRemoved ? '#fef2f2' : '#fff',
+          userSelect: 'none',
         }}
         whileHover={{ scale: 1.02 }}
         onContextMenu={handleContextMenu}
         onClick={onSelect}
+        drag={!isCompleted && !isRemoved ? "x" : false}
+        dragConstraints={{ left: 0, right: 0 }}
+        dragElastic={0.7}
+        onDragEnd={handleDragEnd}
       >
         <div style={{
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
           gap: '0.5rem',
+          pointerEvents: 'none',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
-            {!isCompleted && !isRemoved && <FiMenu style={{ color: '#666', cursor: 'grab' }} />}
+            {!isCompleted && !isRemoved && (
+              <div
+                onPointerDown={(e) => dragControls?.start(e)}
+                style={{ 
+                  color: '#666', 
+                  cursor: 'grab',
+                  touchAction: 'none',
+                  pointerEvents: 'auto',
+                }}
+              >
+                <FiMenu />
+              </div>
+            )}
             <div style={{ flex: 1, minWidth: 0 }}>
               <h3 style={{ 
                 fontSize: '1rem', 
@@ -109,6 +139,7 @@ function TodoCard({
             gap: '0.75rem',
             marginLeft: 'auto',
             padding: isMobile ? '0.25rem' : 0,
+            pointerEvents: 'auto',
           }}>
             {onRestore ? (
               <motion.button
@@ -219,6 +250,7 @@ TodoCard.propTypes = {
   isCompleted: PropTypes.bool,
   isRemoved: PropTypes.bool,
   timestamp: PropTypes.string,
+  dragControls: PropTypes.object,
 };
 
 export default TodoCard; 
