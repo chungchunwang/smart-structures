@@ -1,4 +1,4 @@
-import { Handle } from 'reactflow';
+import { Handle } from '@xyflow/react';
 import { useState } from 'react';
 
 function PublishNode({ data, isConnectable }) {
@@ -12,7 +12,8 @@ function PublishNode({ data, isConnectable }) {
       borderRadius: '8px',
       backgroundColor: '#fff',
       border: '1px solid #e2e8f0',
-      minWidth: '200px',
+      width: '280px',
+      maxWidth: '90vw',
     }}>
       <Handle
         type="target"
@@ -25,7 +26,7 @@ function PublishNode({ data, isConnectable }) {
         fontWeight: 'bold',
         color: '#334155',
       }}>
-        Publish Alert
+        Email Alert
       </div>
       <input
         value={ruleId}
@@ -37,6 +38,8 @@ function PublishNode({ data, isConnectable }) {
           borderRadius: '4px',
           border: '1px solid #e2e8f0',
           marginBottom: '0.5rem',
+          fontSize: '0.9rem',
+          boxSizing: 'border-box',
         }}
       />
       <input
@@ -49,6 +52,8 @@ function PublishNode({ data, isConnectable }) {
           borderRadius: '4px',
           border: '1px solid #e2e8f0',
           marginBottom: '0.5rem',
+          fontSize: '0.9rem',
+          boxSizing: 'border-box',
         }}
       />
       <textarea
@@ -62,6 +67,8 @@ function PublishNode({ data, isConnectable }) {
           border: '1px solid #e2e8f0',
           resize: 'vertical',
           minHeight: '80px',
+          fontSize: '0.9rem',
+          boxSizing: 'border-box',
         }}
       />
       <Handle

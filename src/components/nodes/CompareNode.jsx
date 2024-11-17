@@ -1,9 +1,7 @@
-import { Handle } from 'reactflow';
+import { Handle } from '@xyflow/react';
 import { useState } from 'react';
 
 function CompareNode({ data, isConnectable }) {
-  const [input1, setInput1] = useState(data.properties?.input1 || '');
-  const [input2, setInput2] = useState(data.properties?.input2 || '');
   const [operator, setOperator] = useState(data.properties?.operator || '>');
 
   return (
@@ -12,12 +10,21 @@ function CompareNode({ data, isConnectable }) {
       borderRadius: '8px',
       backgroundColor: '#fff',
       border: '1px solid #e2e8f0',
-      minWidth: '200px',
+      width: '280px',
+      maxWidth: '90vw',
     }}>
       <Handle
         type="target"
         position="top"
-        style={{ background: '#555' }}
+        id="input1"
+        style={{ background: '#555', left: '25%' }}
+        isConnectable={isConnectable}
+      />
+      <Handle
+        type="target"
+        position="top"
+        id="input2"
+        style={{ background: '#555', left: '75%' }}
         isConnectable={isConnectable}
       />
       <div style={{
@@ -27,18 +34,11 @@ function CompareNode({ data, isConnectable }) {
       }}>
         Compare
       </div>
-      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
-        <input
-          value={input1}
-          onChange={(e) => setInput1(e.target.value)}
-          placeholder="Input 1"
-          style={{
-            flex: 1,
-            padding: '0.5rem',
-            borderRadius: '4px',
-            border: '1px solid #e2e8f0',
-          }}
-        />
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center',
+        marginBottom: '0.5rem' 
+      }}>
         <select
           value={operator}
           onChange={(e) => setOperator(e.target.value)}
@@ -46,6 +46,9 @@ function CompareNode({ data, isConnectable }) {
             padding: '0.5rem',
             borderRadius: '4px',
             border: '1px solid #e2e8f0',
+            width: '100px',
+            fontSize: '0.9rem',
+            boxSizing: 'border-box',
           }}
         >
           <option value=">">{'>'}</option>
@@ -54,17 +57,17 @@ function CompareNode({ data, isConnectable }) {
           <option value="<=">{'≤'}</option>
           <option value="==">{'='}</option>
         </select>
-        <input
-          value={input2}
-          onChange={(e) => setInput2(e.target.value)}
-          placeholder="Input 2"
-          style={{
-            flex: 1,
-            padding: '0.5rem',
-            borderRadius: '4px',
-            border: '1px solid #e2e8f0',
-          }}
-        />
+      </div>
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        fontSize: '0.8rem',
+        color: '#666',
+        marginBottom: '0.5rem',
+        padding: '0 1rem',
+      }}>
+        <span>Input 1</span>
+        <span>Input 2</span>
       </div>
       <Handle
         type="source"

@@ -8,7 +8,7 @@ import { getAuth, GoogleAuthProvider } from "firebase/auth";
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyCbZ15lV6zvy7JyLzKykboPJYjMaYOxp_A",
+  apiKey: "AIzaSyAL4QMJLKURz3XUw2jk9oYK1EFcYV5hqvU",
   authDomain: "hackutd-9aec1.firebaseapp.com",
   projectId: "hackutd-9aec1",
   storageBucket: "hackutd-9aec1.firebasestorage.app",

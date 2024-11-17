@@ -1,53 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiThermometer, FiDroplet, FiWind, FiZap, FiChevronDown, FiCheckCircle, FiAlertCircle, FiClock, FiCalendar } from 'react-icons/fi';
+import { FiThermometer, FiDroplet, FiWind, FiZap, FiChevronDown, FiCheckCircle, FiAlertCircle, FiClock, FiCalendar, FiLoader } from 'react-icons/fi';
 import useIsMobile from '../hooks/useIsMobile';
-
-// Mock data - replace with real data in production
-const devices = [
-  { 
-    id: 'temp1', 
-    name: 'Temperature Sensor 1', 
-    type: 'temperature',
-    icon: FiThermometer,
-    data: Array.from({ length: 24 }, (_, i) => ({
-      time: `${i}:00`,
-      value: 20 + Math.random() * 5
-    }))
-  },
-  { 
-    id: 'humid1', 
-    name: 'Humidity Sensor 1', 
-    type: 'humidity',
-    icon: FiDroplet,
-    data: Array.from({ length: 24 }, (_, i) => ({
-      time: `${i}:00`,
-      value: 40 + Math.random() * 20
-    }))
-  },
-  { 
-    id: 'airflow1', 
-    name: 'Airflow Sensor 1', 
-    type: 'airflow',
-    icon: FiWind,
-    data: Array.from({ length: 24 }, (_, i) => ({
-      time: `${i}:00`,
-      value: 100 + Math.random() * 50
-    }))
-  },
-  { 
-    id: 'power1', 
-    name: 'Power Meter 1', 
-    type: 'power',
-    icon: FiZap,
-    data: Array.from({ length: 24 }, (_, i) => ({
-      time: `${i}:00`,
-      value: 2000 + Math.random() * 1000
-    }))
-  },
-];
-
+import { useSensorData } from '../hooks/useSensorData';
+import React from 'react';
 const getUnitByType = (type) => {
   switch (type) {
     case 'temperature': return '°C';
@@ -68,10 +25,28 @@ const getColorByType = (type) => {
   }
 };
 
+const getIconByType = (type) => {
+  switch (type) {
+    case 'temperature': return FiThermometer;
+    case 'humidity': return FiDroplet;
+    case 'airflow': return FiWind;
+    case 'power': return FiZap;
+    default: return FiLoader;
+  }
+};
+
 function DashboardPage() {
-  const [selectedDevice, setSelectedDevice] = useState(devices[0]);
+  const { sensorData, loading } = useSensorData();
+  const [selectedDevice, setSelectedDevice] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const isMobile = useIsMobile();
+
+  // Set initial selected device once data is loaded
+  useEffect(() => {
+    if (sensorData.length > 0 && !selectedDevice) {
+      setSelectedDevice(sensorData[0]);
+    }
+  }, [sensorData, selectedDevice]);
 
   // Mock stats data - replace with real data
   const stats = [
@@ -104,6 +79,25 @@ function DashboardPage() {
       bgColor: "#ede9fe"
     },
   ];
+
+  if (loading || !selectedDevice) {
+    return (
+      <div style={{
+        height: '100%',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontFamily: 'Poppins, sans-serif',
+      }}>
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        >
+          <FiLoader size={24} />
+        </motion.div>
+      </div>
+    );
+  }
 
   return (
     <div style={{
@@ -204,7 +198,7 @@ function DashboardPage() {
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <selectedDevice.icon size={20} />
+                  {React.createElement(getIconByType(selectedDevice.type), { size: 20 })}
                   <span>{selectedDevice.name}</span>
                 </div>
                 <FiChevronDown 
@@ -234,7 +228,7 @@ function DashboardPage() {
                       marginTop: '0.5rem',
                     }}
                   >
-                    {devices.map(device => (
+                    {sensorData.map(device => (
                       <motion.button
                         key={device.id}
                         onClick={() => {
@@ -256,7 +250,7 @@ function DashboardPage() {
                           fontSize: '0.9rem',
                         }}
                       >
-                        <device.icon size={20} />
+                        {React.createElement(getIconByType(device.type), { size: 20 })}
                         <span>{device.name}</span>
                       </motion.button>
                     ))}
@@ -278,7 +272,7 @@ function DashboardPage() {
                 flexDirection: 'column',
                 gap: '0.5rem',
               }}>
-                {devices.map(device => (
+                {sensorData.map(device => (
                   <motion.button
                     key={device.id}
                     onClick={() => setSelectedDevice(device)}
@@ -298,7 +292,7 @@ function DashboardPage() {
                       fontSize: '0.9rem',
                     }}
                   >
-                    <device.icon size={20} />
+                    {React.createElement(getIconByType(device.type), { size: 20 })}
                     <span>{device.name}</span>
                   </motion.button>
                 ))}
@@ -326,7 +320,10 @@ function DashboardPage() {
             alignItems: 'center',
             gap: '0.5rem'
           }}>
-            <selectedDevice.icon size={24} color={getColorByType(selectedDevice.type)} />
+            {React.createElement(getIconByType(selectedDevice.type), { 
+              size: 24,
+              color: getColorByType(selectedDevice.type)
+            })}
             {selectedDevice.name}
           </h2>
 
@@ -335,7 +332,7 @@ function DashboardPage() {
               <LineChart data={selectedDevice.data} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
                 <XAxis 
-                  dataKey="time" 
+                  dataKey="timestamp" 
                   stroke="#94a3b8"
                   tick={{ fontSize: 12 }}
                 />
